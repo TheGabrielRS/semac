@@ -13,7 +13,6 @@ void *visualizador();
 //define a quantidade de valores que um sensor pode armazenar
 #define NVALORES 100
 typedef struct {
-    long int valor;
     long int valores[NVALORES];
 }sensor;
 
