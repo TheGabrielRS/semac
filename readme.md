@@ -1,24 +1,18 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<semaphore.h>
-#include<pthread.h>
-
-long int PMrand();
-void defineConjuntos();
-void *monitor();
-void *coletor();
-void *visualizador();
+# Trabalho 1 - Sistema Operacionais
+## Eletrocardiograma
 
 
-//define a quantidade de valores que um sensor pode armazenar
+### Sensores
+```c
 #define NVALORES 100
 typedef struct {
     long int valor;
     long int valores[NVALORES];
 }sensor;
+```
 
-
-//define as operacoes para serem realizadas
+### Conjunto de Análise
+```c
 #define SOM 0
 #define SUB 1
 #define MUL 2
@@ -29,50 +23,45 @@ typedef struct{
     sensor sensorDois;
     int operacao;
 }conjunto;
+```
 
+### Estruturas para controle da execução
+
+```c
 //define quantos turnos serão realizados
-#define TURNOS 2
+#define TURNOS 50
 float record[TURNOS][NVALORES];
 int turno;
+```
 
-//cria as estruturas de sensores e conjuntos
-sensor sensores[5];
-conjunto conjuntos[5];
-int selecionado;
-
-//semaforos
+### Semaforos
+```c
 sem_t escrita, mostra, coleta;
+```
 
-//define os conjuntos de sensores
-void defineConjuntos(){
-    conjuntos[0].analise = "Ritmo Cardíaco";
-    conjuntos[0].sensorUm = sensores[0];
-    conjuntos[0].sensorDois = sensores[1];
-    conjuntos[0].operacao = SOM;
-    
-    conjuntos[1].analise = "Suprimento Sanguineo";
-    conjuntos[1].sensorUm = sensores[1];
-    conjuntos[1].sensorDois = sensores[2];
-    conjuntos[1].operacao = MUL;
-    
-    conjuntos[2].analise = "Oxigênio";
-    conjuntos[2].sensorUm = sensores[2];
-    conjuntos[2].sensorDois = sensores[3];
-    conjuntos[2].operacao = DIV;
-    
-    conjuntos[3].analise = "Onda P";
-    conjuntos[3].sensorUm = sensores[3];
-    conjuntos[3].sensorDois = sensores[4];
-    conjuntos[3].operacao = SUB;
-    
-    conjuntos[4].analise = "Repolarização";
-    conjuntos[4].sensorUm = sensores[0];
-    conjuntos[4].sensorDois = sensores[4];
-    conjuntos[4].operacao = SOM;
+### Módulo Coletor
+
+```c
+void *coletor(){
+    turno = 0;
+    while(turno < TURNOS){
+        sem_wait(&coleta);
+        selecionado = PMrand()%5;
+        printf("Análise: %s\n",conjuntos[selecionado].analise);
+        int scan;
+        for(scan=0;scan<NVALORES;scan++){
+            conjuntos[selecionado].sensorUm.valores[scan] = PMrand()%100;
+            conjuntos[selecionado].sensorDois.valores[scan] = PMrand()%100;
+        }
+        sem_post(&escrita);
+    }
 }
+```
 
+### Módulo Monitor
+```c
 void *monitor(){
-    while(1){
+    while(turno < TURNOS){
         sem_wait(&escrita);
         int x;
         switch(conjuntos[selecionado].operacao){
@@ -106,28 +95,11 @@ void *monitor(){
             sem_post(&mostra);
     }
 }
+```
 
-void *coletor(){
-    turno = 0;
-    while(1){
-        sem_wait(&coleta);
-        // inicio = time(0);
-        // diff = 0;
-        // long int anterior = 0;
-        int igual=0;
-        selecionado = PMrand()%5;
-        // printf("coleta\n");
-        printf("Análise: %s\n",conjuntos[selecionado].analise);
-        int scan;
-        for(scan=0;scan<NVALORES;scan++){
-            conjuntos[selecionado].sensorUm.valores[scan] = PMrand()%100;
-            conjuntos[selecionado].sensorDois.valores[scan] = PMrand()%100;
-        }
-        // sleep(2);
-        sem_post(&escrita);
-    }
-}
+### Módulo Visualizador
 
+```c
 void *visualizador(){
         sem_wait(&mostra);
         // printf("mostra\n");
@@ -137,29 +109,13 @@ void *visualizador(){
             for(x=0;x<NVALORES;x++)
                 printf("%d\t%.2f\n", x, record[y][x]);
         }
-        //exit(0);
-        // sleep(2);
-        turno = 0;
-        sem_post(&coleta);
+        exit(0);
 }
+```
 
-#define a 16807
-#define m 2147483647
-#define q (m / a)
-#define r (m % a)
-static long int seed = 1;
-long int PMrand()
-{
-    long int hi = seed / q;
-    long int lo = seed % q;
-    long int test = a * lo - r * hi;
-    if(test > 0)
-        seed = test;
-    else    seed = test + m;
-    return seed;
-}
+### Main
 
-
+```c
 void main(){
     const int nthr = 3;
     pthread_t threads[nthr];
@@ -178,3 +134,4 @@ void main(){
     for(x=0;x<nthr;x++)
     pthread_join(threads[x],NULL);
 }
+```
