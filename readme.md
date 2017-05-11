@@ -79,8 +79,7 @@ void *monitor(){
                 break;
             case DIV :
                 for(x=0;x<NVALORES;x++){
-                    // printf("%ld\n", conjuntos[selecionado].sensorUm.valores[x] / conjuntos[selecionado].sensorDois.valores[x]);
-                    if(conjuntos[selecionado].sensorDois.valores[x] != 0){
+                if(conjuntos[selecionado].sensorDois.valores[x] != 0){
                         record[turno][x] = (float)conjuntos[selecionado].sensorUm.valores[x] / (float)conjuntos[selecionado].sensorDois.valores[x];    
                     }else{
                         record[turno][x] = -1;
